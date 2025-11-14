@@ -27,7 +27,6 @@ A modern, progressive web application for listening to Hindi bhakti songs and de
 ## Installation
 
 ```bash
-cd songs-app
 npm install
 ```
 
