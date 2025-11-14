@@ -15,14 +15,23 @@ export default function AudioPlayer({ currentSong, playlist, onClose, onSongChan
   const [duration, setDuration] = useState(0)
   const [volume, setVolume] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+  const [hasError, setHasError] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
 
   useEffect(() => {
     const audio = audioRef.current
     if (!audio || !currentSong?.url) return
 
-    const handleLoadStart = () => setIsLoading(true)
+    const handleLoadStart = () => {
+      setIsLoading(true)
+      setHasError(false)
+    }
     const handleCanPlay = () => setIsLoading(false)
+    const handleError = () => {
+      setIsLoading(false)
+      setHasError(true)
+      console.error('Audio playback error for:', currentSong?.url)
+    }
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime)
     const handleDurationChange = () => setDuration(audio.duration)
     const handleEnded = () => {
@@ -36,6 +45,7 @@ export default function AudioPlayer({ currentSong, playlist, onClose, onSongChan
 
     audio.addEventListener('loadstart', handleLoadStart)
     audio.addEventListener('canplay', handleCanPlay)
+    audio.addEventListener('error', handleError)
     audio.addEventListener('timeupdate', handleTimeUpdate)
     audio.addEventListener('durationchange', handleDurationChange)
     audio.addEventListener('ended', handleEnded)
@@ -43,6 +53,7 @@ export default function AudioPlayer({ currentSong, playlist, onClose, onSongChan
     return () => {
       audio.removeEventListener('loadstart', handleLoadStart)
       audio.removeEventListener('canplay', handleCanPlay)
+      audio.removeEventListener('error', handleError)
       audio.removeEventListener('timeupdate', handleTimeUpdate)
       audio.removeEventListener('durationchange', handleDurationChange)
       audio.removeEventListener('ended', handleEnded)
@@ -105,11 +116,12 @@ export default function AudioPlayer({ currentSong, playlist, onClose, onSongChan
   if (!currentSong) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white shadow-2xl border-t z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-white via-orange-50 to-pink-50 shadow-2xl border-t z-50">
       <audio
         ref={audioRef}
         src={currentSong.url}
         preload="metadata"
+        crossOrigin="anonymous"
       />
       
       <div className="max-w-7xl mx-auto px-4 py-4">
@@ -146,10 +158,12 @@ export default function AudioPlayer({ currentSong, playlist, onClose, onSongChan
             
             <button
               onClick={togglePlayPause}
-              disabled={!currentSong.url || isLoading}
-              className="bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!currentSong.url || isLoading || hasError}
+              className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white p-3 rounded-full transition-all transform hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
-              {isLoading ? (
+              {hasError ? (
+                <span className="text-xs">❌</span>
+              ) : isLoading ? (
                 <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : isPlaying ? (
                 <FiPause className="text-xl" />
